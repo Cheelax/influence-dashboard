@@ -16,6 +16,7 @@ interface Process {
   i: number;
   name: string;
   inputs: number[];
+  processorType: string;
   outputs: number[];
   cost: number;
 }
@@ -97,7 +98,7 @@ const ProductList: React.FC = () => {
             <th className="py-2">Process Name</th>
             <th className="py-2">Input Products</th>
             <th className="py-2">Output Products</th>
-            <th className="py-2">Cost</th>
+            <th className="py-2">Processor type</th>
           </tr>
         </thead>
         <tbody>
@@ -114,20 +115,14 @@ const ProductList: React.FC = () => {
                     ))}
                 </td>
                 <td className="py-2 px-4 border">
-                  {/* {process.output.map((outputId) => {
-                        const outputName = getProductName(outputId);
-                        console.log(
-                          `Process ${process.name} output:`,
-                          outputName
-                        );
-                        return (
-                          <span key={outputId} className="block">
-                            {outputName}
-                          </span>
-                        );
-                      })} */}
+                  {process.inputs &&
+                    Object.entries(process.outputs).map(([key, value]) => (
+                      <span key={key} className="block">
+                        {`Product ID: ${key}, Cost: ${value}`}
+                      </span>
+                    ))}
                 </td>
-                <td className="py-2 px-4 border">{process.cost}</td>
+                <td className="py-2 px-4 border">{process.processorType}</td>
               </tr>
             ))
           ) : (
