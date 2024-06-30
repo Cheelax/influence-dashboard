@@ -2,16 +2,14 @@ import processes from "../data/process";
 import processor from "../data/processor";
 import products from "../data/product";
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import React, { useState, useEffect } from "react";
 
+// Définition des interfaces
 interface Product {
   i: number;
   name: string;
@@ -48,21 +46,22 @@ type ProcessorIDS = {
   [key: string]: number;
 };
 
+const toCamelCase = (str: string) => {
+  return str
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase())
+    .replace(/^./, (match) => match.toUpperCase());
+};
+
+const columnHelper = createColumnHelper<Process>();
+
 const ProductList: React.FC = () => {
   const [processList, setProcessList] = useState<Process[]>([]);
   const [productList, setProductList] = useState<Product[]>([]);
   const [processorList, setProcessorList] = useState<Processor[]>([]);
 
-  const toCamelCase = (str: string) => {
-    return str
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase())
-      .replace(/^./, (match) => match.toUpperCase());
-  };
-
   useEffect(() => {
     try {
-      // Load processor data
       if (processor?.IDS) {
         const processorList = Object.entries(processor.IDS as ProcessorIDS).map(
           ([key, value]) => ({
@@ -71,62 +70,52 @@ const ProductList: React.FC = () => {
           })
         );
         setProcessorList(processorList);
-        console.log("Processor List:", processorList);
+        // console.log("Processor List:", processorList);
       } else {
         console.error("Processor data is undefined or null");
       }
 
-      // Load process data
       if (processes?.IDS) {
         const processKeys = Object.keys(processes.IDS);
-        const processList = processKeys.map((key) => {
-          return {
-            name: key,
-            ...processes.IDS[key],
-          };
-        });
+        const processList = processKeys.map((key) => ({
+          name: key,
+          ...processes.IDS[key],
+        }));
 
         const processTypes = (types: any) => {
           if (types) {
             const typeKeys = Object.keys(types);
-            const typeList = typeKeys.map((key) => {
-              return {
-                id: key,
-                ...types[key],
-              };
-            });
+            const typeList = typeKeys.map((key) => ({
+              id: key,
+              ...types[key],
+            }));
             return typeList;
           }
           return [];
         };
 
-        // Use the function to set the type list
         const typesList = processTypes(processes.TYPES);
-        console.log("Types List:", typesList);
-
+        // console.log("Types List:", typesList);
         setProcessList(typesList);
       } else {
         console.error("Processes data is undefined or null");
       }
 
-      // Load product data
       if (products?.IDS) {
         const processProduct = (types: any) => {
           if (types) {
             const typeKeys = Object.keys(types);
-            const typeList = typeKeys.map((key) => {
-              return {
-                id: key,
-                ...types[key],
-              };
-            });
+            const typeList = typeKeys.map((key) => ({
+              id: key,
+              ...types[key],
+            }));
             return typeList;
           }
           return [];
         };
         const productList = processProduct(products.TYPES);
         setProductList(productList);
-        console.log("Product List:", productList);
+        // console.log("Product List:", productList);
       } else {
         console.error("Products data is undefined or null");
       }
@@ -136,67 +125,150 @@ const ProductList: React.FC = () => {
   }, []);
 
   const getProductName = (id: number) => {
+    // console.log("Product List:", productList);
     const product = productList.find((p) => p.i === id);
     return product ? product.name : "Unknown";
   };
 
   const getProcessorName = (id: number) => {
+    console.log("Processor List:", processorList);
+    console.log("Processor List:", id);
     const processor = processorList.find((p) => p.id === id);
     return processor ? toCamelCase(processor.name) : "Unknown";
   };
 
+  const columns = [
+    columnHelper.accessor("name", {
+      header: "Process Name",
+      cell: (info) => info.getValue(),
+      footer: (info) => info.column.id,
+    }),
+    columnHelper.accessor("inputs", {
+      header: "Input Products",
+      cell: (info) => {
+        const value = info.getValue();
+        let transformedArray;
+        if (typeof value === "object" && !Array.isArray(value)) {
+          transformedArray = Object.entries(value);
+          console.log("Transformed array:", transformedArray);
+        }
+
+        return (
+          <div>
+            {transformedArray.map((input, index) => (
+              <div
+                key={index}
+                className="block border-2 border-black rounded-lg p-2 mb-2"
+              >
+                {`${getProductName(Number(input[0]))}, Cost: ${input[1]}`}
+              </div>
+            ))}
+          </div>
+        );
+      },
+      footer: (info) => info.column.id,
+    }),
+    columnHelper.accessor("outputs", {
+      header: "Output Products",
+      cell: (info) => {
+        const value = info.getValue();
+
+        let transformedArray;
+        if (typeof value === "object" && !Array.isArray(value)) {
+          transformedArray = Object.entries(value);
+          console.log("Transformed array:", transformedArray);
+        }
+
+        return (
+          <div>
+            {transformedArray.map((output, index) => (
+              <div
+                key={index}
+                className="block bg-red-100 border-2 border-black rounded-lg p-2 mb-2"
+              >
+                {`${getProductName(Number(output[0]))}, Cost: ${output[1]}`}
+              </div>
+            ))}
+          </div>
+        );
+      },
+      footer: (info) => info.column.id,
+    }),
+    columnHelper.accessor("processorType", {
+      header: "Processor Type",
+      cell: (info) => getProcessorName(Number(info.getValue())),
+      footer: (info) => info.column.id,
+    }),
+    columnHelper.accessor("cost", {
+      header: "Cost",
+      cell: (info) => info.getValue(),
+      footer: (info) => info.column.id,
+    }),
+  ];
+
+  const table = useReactTable({
+    data: processList,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Processes</h1>
-
-      <Table>
-        <TableCaption>A list of processes and their details</TableCaption>
-        <TableRow>
-          <TableHead className="w-[100px]">Process Name</TableHead>
-          <TableHead>Input Products</TableHead>
-          <TableHead>Output Products</TableHead>
-          <TableHead className="text-right">Processor Type</TableHead>
-        </TableRow>
-        <TableBody>
-          {processList.length > 0 ? (
-            processList.map((process) => (
-              <TableRow key={process.i}>
-                <TableCell>{process.name}</TableCell>
-                <TableCell>
-                  {process.inputs &&
-                    Object.entries(process.inputs).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="block border-2 border-black rounded-lg p-2 mb-2"
-                      >
-                        {`${getProductName(Number(key))}, Cost: ${value}`}
-                      </div>
-                    ))}
-                </TableCell>
-                <TableCell>
-                  {process.outputs &&
-                    Object.entries(process.outputs).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="block bg-red border-2 border-black rounded-lg p-2 mb-2"
-                      >
-                        {`${getProductName(Number(key))}, Cost: ${value}`}
-                      </div>
-                    ))}
-                </TableCell>
-                <TableCell>
-                  {getProcessorName(Number(process.processorType))}
-                </TableCell>
-                <TableCell>{process.cost}</TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={5}>No processes available</TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th
+                  key={header.id}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              {row.getVisibleCells().map((cell) => (
+                <td
+                  key={cell.id}
+                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          {table.getFooterGroups().map((footerGroup) => (
+            <tr key={footerGroup.id}>
+              {footerGroup.headers.map((header) => (
+                <th
+                  key={header.id}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.footer,
+                        header.getContext()
+                      )}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </tfoot>
+      </table>
     </div>
   );
 };
