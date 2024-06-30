@@ -15,8 +15,8 @@ interface Product {
 interface Process {
   i: number;
   name: string;
-  input: number[];
-  output: number[];
+  inputs: number[];
+  outputs: number[];
   cost: number;
 }
 
@@ -27,46 +27,54 @@ const ProductList: React.FC = () => {
   useEffect(() => {
     try {
       if (processes && processes.IDS) {
-        // const processList = Object.keys(processes).map((key) => ({
-        //   id: processes[key].id,
-        //   name: processes[key].name,
-        // }));
-        const processValues = Object.values(processes);
-        // console.log("Loaded processes:", processes);
         const processKeys = Object.keys(processes.IDS);
-
-        // const processList = Object.values(processes.IDS) as any[];
-
-        // setProcessList(processList);
-
         const processList = processKeys.map((key) => {
           return {
             name: key,
             ...processes.IDS[key],
           };
         });
-        console.log("Process Keys:", processList);
 
-        setProcessList(processList);
-        // setProcessList(processes.IDS as any[]);
-        // if (Array.isArray(processValues)) {
-        //   setProcessList(processValues as any[]);
-        //   console.log("Loaded processes:", processValues);
-        // } else {
-        //   console.error("Processes data is not an array:", processes);
-        // }
+        const processTypes = (types: any) => {
+          if (types) {
+            const typeKeys = Object.keys(types);
+            const typeList = typeKeys.map((key) => {
+              return {
+                id: key,
+                ...types[key],
+              };
+            });
+            return typeList;
+          }
+          return [];
+        };
+
+        // Use the function to set the type list
+        const typesList = processTypes(processes.TYPES);
+        console.log("Types List:", typesList);
+
+        setProcessList(typesList);
       } else {
         console.error("Processes data is undefined or null");
       }
 
       if (products && products.IDS) {
-        const productValues = Object.values(products.IDS);
-        if (Array.isArray(productValues)) {
-          setProductList(productValues as any[]);
-          // console.log("Loaded products:", productValues);
-        } else {
-          console.error("Products data is not an array:", products);
-        }
+        const productTypes = (types: any) => {
+          if (types) {
+            const typeKeys = Object.keys(types);
+            const typeList = typeKeys.map((key) => {
+              return {
+                id: key,
+                ...types[key],
+              };
+            });
+            return typeList;
+          }
+          return [];
+        };
+
+        const typesList = productTypes(products.TYPES);
+        setProductList(typesList);
       } else {
         console.error("Products data is undefined or null");
       }
@@ -94,28 +102,19 @@ const ProductList: React.FC = () => {
         </thead>
         <tbody>
           {processList.length > 0 ? (
-            processList.map(
-              (process) => (
-                console.log(`Process ${process} input:`, process.input),
-                (
-                  <tr key={process.i} className="bg-gray-100">
-                    <td className="py-2 px-4 border">{process.name}</td>
-                    <td className="py-2 px-4 border">
-                      {/* {process.input.map((inputId) => {
-                        const inputName = getProductName(inputId);
-                        console.log(
-                          `Process ${process.name} input:`,
-                          inputName
-                        );
-                        return (
-                          <span key={inputId} className="block">
-                            {inputName}
-                          </span>
-                        );
-                      })} */}
-                    </td>
-                    <td className="py-2 px-4 border">
-                      {/* {process.output.map((outputId) => {
+            processList.map((process) => (
+              <tr key={process.i} className="bg-gray-100">
+                <td className="py-2 px-4 border">{process.name}</td>
+                <td className="py-2 px-4 border">
+                  {process.inputs &&
+                    Object.entries(process.inputs).map(([key, value]) => (
+                      <span key={key} className="block">
+                        {`Product ID: ${key}, Cost: ${value}`}
+                      </span>
+                    ))}
+                </td>
+                <td className="py-2 px-4 border">
+                  {/* {process.output.map((outputId) => {
                         const outputName = getProductName(outputId);
                         console.log(
                           `Process ${process.name} output:`,
@@ -127,12 +126,10 @@ const ProductList: React.FC = () => {
                           </span>
                         );
                       })} */}
-                    </td>
-                    <td className="py-2 px-4 border">{process.cost}</td>
-                  </tr>
-                )
-              )
-            )
+                </td>
+                <td className="py-2 px-4 border">{process.cost}</td>
+              </tr>
+            ))
           ) : (
             <tr>
               <td colSpan={4} className="py-2 px-4 border">
