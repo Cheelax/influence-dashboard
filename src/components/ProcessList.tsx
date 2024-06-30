@@ -158,7 +158,7 @@ const ProductList: React.FC = () => {
             {transformedArray.map((input, index) => (
               <div
                 key={index}
-                className="block border-2 border-black rounded-lg p-2 mb-2"
+                className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
               >
                 {`${getProductName(Number(input[0]))}, Cost: ${input[1]}`}
               </div>
@@ -184,7 +184,7 @@ const ProductList: React.FC = () => {
             {transformedArray.map((output, index) => (
               <div
                 key={index}
-                className="block bg-red-100 border-2 border-black rounded-lg p-2 mb-2"
+                className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
               >
                 {`${getProductName(Number(output[0]))}, Cost: ${output[1]}`}
               </div>
@@ -213,16 +213,16 @@ const ProductList: React.FC = () => {
   });
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-red">
       <h1 className="text-2xl font-bold mb-4">Processes</h1>
-      <table className="min-w-full divide-y divide-gray-200">
+      <table className="min-w-full divide-y divide-gray-200 bg-gray-700">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <tr key={headerGroup.id} className="bg-gray-200 white">
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                 >
                   {header.isPlaceholder
                     ? null
@@ -237,11 +237,11 @@ const ProductList: React.FC = () => {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="hover:bg-gray-50">
+            <tr key={row.id}>
               {row.getVisibleCells().map((cell) => (
                 <td
                   key={cell.id}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                  className="px-6 py-4 whitespace-nowrap text-sm text-white"
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
