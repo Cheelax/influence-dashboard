@@ -151,15 +151,12 @@ const ProductList: React.FC = () => {
 
       <Table>
         <TableCaption>A list of processes and their details</TableCaption>
-        <TableHead>
-          <TableRow>
-            <TableHeader>Process Name</TableHeader>
-            <TableHeader>Input Products</TableHeader>
-            <TableHeader>Output Products</TableHeader>
-            <TableHeader>Processor Type</TableHeader>
-            <TableHeader>Cost</TableHeader>
-          </TableRow>
-        </TableHead>
+        <TableRow>
+          <TableHead className="w-[100px]">Process Name</TableHead>
+          <TableHead>Input Products</TableHead>
+          <TableHead>Output Products</TableHead>
+          <TableHead className="text-right">Processor Type</TableHead>
+        </TableRow>
         <TableBody>
           {processList.length > 0 ? (
             processList.map((process) => (
@@ -170,12 +167,7 @@ const ProductList: React.FC = () => {
                     Object.entries(process.inputs).map(([key, value]) => (
                       <div
                         key={key}
-                        style={{
-                          border: "2px solid black",
-                          borderRadius: "0.5rem",
-                          padding: "0.5rem",
-                          marginBottom: "0.5rem",
-                        }}
+                        className="block border-2 border-black rounded-lg p-2 mb-2"
                       >
                         {`${getProductName(Number(key))}, Cost: ${value}`}
                       </div>
