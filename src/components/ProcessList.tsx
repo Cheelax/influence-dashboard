@@ -168,21 +168,28 @@ const ProductList: React.FC = () => {
                 <TableCell>
                   {process.inputs &&
                     Object.entries(process.inputs).map(([key, value]) => (
-                      <span key={key} className="block">
-                        {`Product ID: ${getProductName(
-                          Number(key)
-                        )}, Cost: ${value}`}
-                      </span>
+                      <div
+                        key={key}
+                        style={{
+                          border: "2px solid black",
+                          borderRadius: "0.5rem",
+                          padding: "0.5rem",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        {`${getProductName(Number(key))}, Cost: ${value}`}
+                      </div>
                     ))}
                 </TableCell>
                 <TableCell>
                   {process.outputs &&
                     Object.entries(process.outputs).map(([key, value]) => (
-                      <span key={key} className="block">
-                        {`Product ID: ${getProductName(
-                          Number(key)
-                        )}, Cost: ${value}`}
-                      </span>
+                      <div
+                        key={key}
+                        className="block bg-red border-2 border-black rounded-lg p-2 mb-2"
+                      >
+                        {`${getProductName(Number(key))}, Cost: ${value}`}
+                      </div>
                     ))}
                 </TableCell>
                 <TableCell>

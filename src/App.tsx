@@ -1,5 +1,6 @@
 import ProductList from "./components/ProcessList";
 import React from "react";
+import "./index.css";
 
 // import DataDisplay from "./components/DataDisplay";
 
