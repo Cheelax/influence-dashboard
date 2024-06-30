@@ -1,7 +1,16 @@
-import React, { useState, useEffect } from "react";
 import processes from "../data/process";
-import products from "../data/product";
 import processor from "../data/processor";
+import products from "../data/product";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
+import React, { useState, useEffect } from "react";
 
 interface Product {
   i: number;
@@ -22,10 +31,27 @@ interface Process {
   cost: number;
 }
 
+interface Processor {
+  name: string;
+  id: number;
+}
+
+type ProcessesIDS = {
+  [key: string]: number;
+};
+
+type ProductsIDS = {
+  [key: string]: Product;
+};
+
+type ProcessorIDS = {
+  [key: string]: number;
+};
+
 const ProductList: React.FC = () => {
   const [processList, setProcessList] = useState<Process[]>([]);
   const [productList, setProductList] = useState<Product[]>([]);
-  const [processorList, setProcessorList] = useState<any[]>([]);
+  const [processorList, setProcessorList] = useState<Processor[]>([]);
 
   const toCamelCase = (str: string) => {
     return str
@@ -36,17 +62,22 @@ const ProductList: React.FC = () => {
 
   useEffect(() => {
     try {
-      if (processor && processor.IDS) {
-        const processorKeys = Object.keys(processor.IDS);
-        const processorList = processorKeys.map((key) => {
-          return {
+      // Load processor data
+      if (processor?.IDS) {
+        const processorList = Object.entries(processor.IDS as ProcessorIDS).map(
+          ([key, value]) => ({
             name: key,
-            ...processor.IDS[key],
-          };
-        });
+            id: value,
+          })
+        );
         setProcessorList(processorList);
+        console.log("Processor List:", processorList);
+      } else {
+        console.error("Processor data is undefined or null");
       }
-      if (processes && processes.IDS) {
+
+      // Load process data
+      if (processes?.IDS) {
         const processKeys = Object.keys(processes.IDS);
         const processList = processKeys.map((key) => {
           return {
@@ -78,8 +109,9 @@ const ProductList: React.FC = () => {
         console.error("Processes data is undefined or null");
       }
 
-      if (products && products.IDS) {
-        const productTypes = (types: any) => {
+      // Load product data
+      if (products?.IDS) {
+        const processProduct = (types: any) => {
           if (types) {
             const typeKeys = Object.keys(types);
             const typeList = typeKeys.map((key) => {
@@ -92,9 +124,9 @@ const ProductList: React.FC = () => {
           }
           return [];
         };
-
-        const typesList = productTypes(products.TYPES);
-        setProductList(typesList);
+        const productList = processProduct(products.TYPES);
+        setProductList(productList);
+        console.log("Product List:", productList);
       } else {
         console.error("Products data is undefined or null");
       }
@@ -109,30 +141,31 @@ const ProductList: React.FC = () => {
   };
 
   const getProcessorName = (id: number) => {
-    const processor = processorList[id];
-    console.log("Processor:", processorList);
-    console.log("Processor:", processor);
+    const processor = processorList.find((p) => p.id === id);
     return processor ? toCamelCase(processor.name) : "Unknown";
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Processes</h1>
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="py-2">Process Name</th>
-            <th className="py-2">Input Products</th>
-            <th className="py-2">Output Products</th>
-            <th className="py-2">Processor type</th>
-          </tr>
-        </thead>
-        <tbody>
+
+      <Table>
+        <TableCaption>A list of processes and their details</TableCaption>
+        <TableHead>
+          <TableRow>
+            <TableHeader>Process Name</TableHeader>
+            <TableHeader>Input Products</TableHeader>
+            <TableHeader>Output Products</TableHeader>
+            <TableHeader>Processor Type</TableHeader>
+            <TableHeader>Cost</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {processList.length > 0 ? (
             processList.map((process) => (
-              <tr key={process.i} className="bg-gray-100">
-                <td className="py-2 px-4 border">{process.name}</td>
-                <td className="py-2 px-4 border">
+              <TableRow key={process.i}>
+                <TableCell>{process.name}</TableCell>
+                <TableCell>
                   {process.inputs &&
                     Object.entries(process.inputs).map(([key, value]) => (
                       <span key={key} className="block">
@@ -141,31 +174,30 @@ const ProductList: React.FC = () => {
                         )}, Cost: ${value}`}
                       </span>
                     ))}
-                </td>
-                <td className="py-2 px-4 border">
-                  {process.inputs &&
+                </TableCell>
+                <TableCell>
+                  {process.outputs &&
                     Object.entries(process.outputs).map(([key, value]) => (
                       <span key={key} className="block">
-                        {`Product name: ${getProductName(
+                        {`Product ID: ${getProductName(
                           Number(key)
                         )}, Cost: ${value}`}
                       </span>
                     ))}
-                </td>
-                <td className="py-2 px-4 border">
+                </TableCell>
+                <TableCell>
                   {getProcessorName(Number(process.processorType))}
-                </td>
-              </tr>
+                </TableCell>
+                <TableCell>{process.cost}</TableCell>
+              </TableRow>
             ))
           ) : (
-            <tr>
-              <td colSpan={4} className="py-2 px-4 border">
-                No processes available
-              </td>
-            </tr>
+            <TableRow>
+              <TableCell colSpan={5}>No processes available</TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 };

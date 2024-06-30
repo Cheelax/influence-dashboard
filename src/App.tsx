@@ -1,6 +1,7 @@
+import ProductList from "./components/ProcessList";
 import React from "react";
-import ProductList from "./components/ProcessList.tsx";
-import DataDisplay from "./components/DataDisplay.tsx";
+
+// import DataDisplay from "./components/DataDisplay";
 
 const App: React.FC = () => {
   return (
@@ -8,7 +9,7 @@ const App: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6">
         Product and Process Management
       </h1>
-      <DataDisplay />
+      {/* <DataDisplay /> */}
       <ProductList />
     </div>
   );
