@@ -30,7 +30,8 @@ const ProductList: React.FC = () => {
   const toCamelCase = (str: string) => {
     return str
       .toLowerCase()
-      .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase());
+      .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase())
+      .replace(/^./, (match) => match.toUpperCase());
   };
 
   useEffect(() => {
@@ -107,6 +108,13 @@ const ProductList: React.FC = () => {
     return product ? product.name : "Unknown";
   };
 
+  const getProcessorName = (id: number) => {
+    const processor = processorList[id];
+    console.log("Processor:", processorList);
+    console.log("Processor:", processor);
+    return processor ? toCamelCase(processor.name) : "Unknown";
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Processes</h1>
@@ -144,7 +152,9 @@ const ProductList: React.FC = () => {
                       </span>
                     ))}
                 </td>
-                <td className="py-2 px-4 border">{process.processorType}</td>
+                <td className="py-2 px-4 border">
+                  {getProcessorName(Number(process.processorType))}
+                </td>
               </tr>
             ))
           ) : (
