@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import processes from "../data/process";
 import products from "../data/product";
+import processor from "../data/processor";
 
 interface Product {
   i: number;
@@ -24,9 +25,26 @@ interface Process {
 const ProductList: React.FC = () => {
   const [processList, setProcessList] = useState<Process[]>([]);
   const [productList, setProductList] = useState<Product[]>([]);
+  const [processorList, setProcessorList] = useState<any[]>([]);
+
+  const toCamelCase = (str: string) => {
+    return str
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase());
+  };
 
   useEffect(() => {
     try {
+      if (processor && processor.IDS) {
+        const processorKeys = Object.keys(processor.IDS);
+        const processorList = processorKeys.map((key) => {
+          return {
+            name: key,
+            ...processor.IDS[key],
+          };
+        });
+        setProcessorList(processorList);
+      }
       if (processes && processes.IDS) {
         const processKeys = Object.keys(processes.IDS);
         const processList = processKeys.map((key) => {
@@ -110,7 +128,9 @@ const ProductList: React.FC = () => {
                   {process.inputs &&
                     Object.entries(process.inputs).map(([key, value]) => (
                       <span key={key} className="block">
-                        {`Product ID: ${key}, Cost: ${value}`}
+                        {`Product ID: ${getProductName(
+                          Number(key)
+                        )}, Cost: ${value}`}
                       </span>
                     ))}
                 </td>
@@ -118,7 +138,9 @@ const ProductList: React.FC = () => {
                   {process.inputs &&
                     Object.entries(process.outputs).map(([key, value]) => (
                       <span key={key} className="block">
-                        {`Product ID: ${key}, Cost: ${value}`}
+                        {`Product name: ${getProductName(
+                          Number(key)
+                        )}, Cost: ${value}`}
                       </span>
                     ))}
                 </td>

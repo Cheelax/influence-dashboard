@@ -1,4 +1,4 @@
-const IDS = {
+export const IDS = {
   CONSTRUCTION: 0,
   REFINERY: 1,
   FACTORY: 2,
@@ -7,7 +7,7 @@ const IDS = {
   DRY_DOCK: 5,
 };
 
-const STATUSES = {
+export const STATUSES = {
   IDLE: 0,
   RUNNING: 1,
 };
