@@ -2,14 +2,29 @@ import processes from "../data/process";
 import processor from "../data/processor";
 import products from "../data/product";
 import {
-  createColumnHelper,
+  Column,
+  ColumnDef,
+  ColumnFiltersState,
+  RowData,
   flexRender,
   getCoreRowModel,
-  useReactTable,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
-  ColumnFiltersState,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  createColumnHelper,
 } from "@tanstack/react-table";
 import React, { useState, useEffect } from "react";
+
+declare module "@tanstack/react-table" {
+  //allows us to define custom properties for our columns
+  interface ColumnMeta<TData extends RowData, TValue> {
+    filterVariant?: "text" | "range" | "select";
+  }
+}
 
 // Définition des interfaces
 interface Product {
@@ -36,14 +51,6 @@ interface Processor {
   id: number;
 }
 
-type ProcessesIDS = {
-  [key: string]: number;
-};
-
-type ProductsIDS = {
-  [key: string]: Product;
-};
-
 type ProcessorIDS = {
   [key: string]: number;
 };
@@ -54,39 +61,6 @@ const toCamelCase = (str: string) => {
     .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase())
     .replace(/^./, (match) => match.toUpperCase());
 };
-// A typical debounced input react component
-function DebouncedInput({
-  value: initialValue,
-  onChange,
-  debounce = 500,
-  ...props
-}: {
-  value: string | number;
-  onChange: (value: string | number) => void;
-  debounce?: number;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">) {
-  const [value, setValue] = React.useState(initialValue);
-
-  React.useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      onChange(value);
-    }, debounce);
-
-    return () => clearTimeout(timeout);
-  }, [value]);
-
-  return (
-    <input
-      {...props}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-    />
-  );
-}
 
 const columnHelper = createColumnHelper<Process>();
 
@@ -95,6 +69,45 @@ const ProductList: React.FC = () => {
   const [productList, setProductList] = useState<Product[]>([]);
   const [processorList, setProcessorList] = useState<Processor[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // A typical debounced input react component
+  function DebouncedInput({
+    value: initialValue,
+    onChange,
+    debounce = 500,
+    ...props
+  }: {
+    value: string | number;
+    onChange: (value: string | number) => void;
+    debounce?: number;
+  } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">) {
+    const [value, setValue] = React.useState(initialValue);
+
+    React.useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    React.useEffect(() => {
+      const timeout = setTimeout(() => {
+        onChange(value);
+      }, debounce);
+
+      return () => clearTimeout(timeout);
+    }, [value]);
+
+    return (
+      <input
+        {...props}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onClick={(e) => {
+          e.stopPropagation();
+          props.onClick?.(e); // Appeler le gestionnaire onClick d'origine s'il existe
+        }}
+      />
+    );
+  }
+
   useEffect(() => {
     try {
       if (processor?.IDS) {
@@ -105,7 +118,6 @@ const ProductList: React.FC = () => {
           })
         );
         setProcessorList(processorList);
-        // console.log("Processor List:", processorList);
       } else {
         console.error("Processor data is undefined or null");
       }
@@ -166,8 +178,6 @@ const ProductList: React.FC = () => {
   };
 
   const getProcessorName = (id: number) => {
-    console.log("Processor List:", processorList);
-    console.log("Processor List:", id);
     const processor = processorList.find((p) => p.id === id);
     return processor ? toCamelCase(processor.name) : "Unknown";
   };
@@ -178,66 +188,79 @@ const ProductList: React.FC = () => {
       cell: (info) => info.getValue(),
       footer: (info) => info.column.id,
       filterFn: "includesString",
-    }),
-    columnHelper.accessor("inputs", {
-      header: "Input Products",
-      filterFn: "includesString",
-      cell: (info) => {
-        const value = info.getValue();
-        let transformedArray;
-        if (typeof value === "object" && !Array.isArray(value)) {
-          transformedArray = Object.entries(value);
-          console.log("Transformed array:", transformedArray);
-        }
-
-        return (
-          <div>
-            {transformedArray.map((input, index) => (
-              <div
-                key={index}
-                className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
-              >
-                {`${getProductName(Number(input[0]))}, Cost: ${input[1]}`}
-              </div>
-            ))}
-          </div>
-        );
+      meta: {
+        filterVariant: "text",
       },
-      footer: (info) => info.column.id,
     }),
-    columnHelper.accessor("outputs", {
-      header: "Output Products",
-      cell: (info) => {
-        const value = info.getValue();
+    // columnHelper.accessor("inputs", {
+    //   header: "Input Products",
+    //   filterFn: "includesString",
+    //   meta: {
+    //     filterVariant: "select",
+    //   },
+    //   cell: (info) => {
+    //     const value = info.getValue();
+    //     let transformedArray = [];
+    //     if (typeof value === "object" && !Array.isArray(value)) {
+    //       transformedArray = Object.entries(value);
+    //     }
 
-        let transformedArray;
-        if (typeof value === "object" && !Array.isArray(value)) {
-          transformedArray = Object.entries(value);
-          console.log("Transformed array:", transformedArray);
-        }
+    //     return (
+    //       <div>
+    //         {transformedArray.map((input, index) => (
+    //           <div
+    //             key={index}
+    //             className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
+    //           >
+    //             {`${getProductName(Number(input[0]))}, Cost: ${input[1]}`}
+    //           </div>
+    //         ))}
+    //       </div>
+    //     );
+    //   },
+    //   footer: (info) => info.column.id,
+    // }),
 
-        return (
-          <div>
-            {transformedArray.map((output, index) => (
-              <div
-                key={index}
-                className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
-              >
-                {`${getProductName(Number(output[0]))}, Cost: ${output[1]}`}
-              </div>
-            ))}
-          </div>
-        );
-      },
-      footer: (info) => info.column.id,
-    }),
+    // columnHelper.accessor("outputs", {
+    //   header: "Output Products",
+    //   meta: {
+    //     filterVariant: "select",
+    //   },
+    //   cell: (info) => {
+    //     const value = info.getValue();
+    //     let transformedArray = [];
+    //     if (typeof value === "object" && !Array.isArray(value)) {
+    //       transformedArray = Object.entries(value);
+    //     }
+
+    //     return (
+    //       <div>
+    //         {transformedArray.map((output, index) => (
+    //           <div
+    //             key={index}
+    //             className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
+    //           >
+    //             {`${getProductName(Number(output[0]))}, Cost: ${output[1]}`}
+    //           </div>
+    //         ))}
+    //       </div>
+    //     );
+    //   },
+    //   footer: (info) => info.column.id,
+    // }),
     columnHelper.accessor("processorType", {
       header: "Processor Type",
+      meta: {
+        filterVariant: "select",
+      },
       cell: (info) => getProcessorName(Number(info.getValue())),
       footer: (info) => info.column.id,
     }),
     columnHelper.accessor("cost", {
       header: "Cost",
+      meta: {
+        filterVariant: "select",
+      },
       cell: (info) => info.getValue(),
       footer: (info) => info.column.id,
     }),
@@ -246,20 +269,111 @@ const ProductList: React.FC = () => {
   const table = useReactTable({
     data: processList,
     columns,
+    state: {
+      columnFilters,
+    },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    getFilteredRowModel: getFilteredRowModel(), //client-side filtering
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(), // client-side faceting
+    getFacetedUniqueValues: getFacetedUniqueValues(), // generate unique values for select filter/autocomplete
+    getFacetedMinMaxValues: getFacetedMinMaxValues(), // generate min/max values for range filter
+    debugTable: false,
+    debugHeaders: false,
+    debugColumns: false,
   });
 
-  function Filter({ column }) {
+  function Filter({ column }: { column: Column<any, unknown> }) {
+    const { filterVariant } = column.columnDef.meta ?? {};
+
     const columnFilterValue = column.getFilterValue();
-    return (
-      <input
-        value={columnFilterValue ?? ""}
+
+    const sortedUniqueValues = React.useMemo(
+      () =>
+        filterVariant === "range"
+          ? []
+          : Array.from(column.getFacetedUniqueValues().keys())
+              .sort()
+              .slice(0, 5000),
+      [column.getFacetedUniqueValues(), filterVariant]
+    );
+
+    return filterVariant === "range" ? (
+      <div>
+        <div className="flex space-x-2">
+          <DebouncedInput
+            type="number"
+            min={Number(column.getFacetedMinMaxValues()?.[0] ?? "")}
+            max={Number(column.getFacetedMinMaxValues()?.[1] ?? "")}
+            value={(columnFilterValue as [number, number])?.[0] ?? ""}
+            onChange={(value) =>
+              column.setFilterValue((old: [number, number]) => [
+                value,
+                old?.[1],
+              ])
+            }
+            placeholder={`Min ${
+              column.getFacetedMinMaxValues()?.[0] !== undefined
+                ? `(${column.getFacetedMinMaxValues()?.[0]})`
+                : ""
+            }`}
+            className="w-24 border shadow rounded"
+          />
+          <DebouncedInput
+            type="number"
+            min={Number(column.getFacetedMinMaxValues()?.[0] ?? "")}
+            max={Number(column.getFacetedMinMaxValues()?.[1] ?? "")}
+            value={(columnFilterValue as [number, number])?.[1] ?? ""}
+            onChange={(value) =>
+              column.setFilterValue((old: [number, number]) => [
+                old?.[0],
+                value,
+              ])
+            }
+            placeholder={`Max ${
+              column.getFacetedMinMaxValues()?.[1]
+                ? `(${column.getFacetedMinMaxValues()?.[1]})`
+                : ""
+            }`}
+            className="w-24 border shadow rounded"
+          />
+        </div>
+        <div className="h-1" />
+      </div>
+    ) : filterVariant === "select" ? (
+      <select
         onChange={(e) => column.setFilterValue(e.target.value)}
-        placeholder={`Search ${column.columnDef.header}`}
-        className="w-full border shadow rounded"
-      />
+        value={columnFilterValue?.toString()}
+      >
+        <option value="">All</option>
+        {sortedUniqueValues.map((value) => (
+          //dynamically generated select options from faceted values feature
+          <option value={value} key={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+    ) : (
+      <>
+        {/* Autocomplete suggestions from faceted values feature */}
+        <datalist id={column.id + "list"}>
+          {sortedUniqueValues.map((value: any) => (
+            <option value={value} key={value} />
+          ))}
+        </datalist>
+        <DebouncedInput
+          type="text"
+          value={(columnFilterValue ?? "") as string}
+          onChange={(value) => column.setFilterValue(value)}
+          placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
+          className="w-36 border shadow rounded"
+          list={column.id + "list"}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <div className="h-1" />
+      </>
     );
   }
 
