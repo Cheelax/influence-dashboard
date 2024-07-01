@@ -6,6 +6,8 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  getFilteredRowModel,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 import React, { useState, useEffect } from "react";
 
@@ -52,6 +54,39 @@ const toCamelCase = (str: string) => {
     .replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase())
     .replace(/^./, (match) => match.toUpperCase());
 };
+// A typical debounced input react component
+function DebouncedInput({
+  value: initialValue,
+  onChange,
+  debounce = 500,
+  ...props
+}: {
+  value: string | number;
+  onChange: (value: string | number) => void;
+  debounce?: number;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">) {
+  const [value, setValue] = React.useState(initialValue);
+
+  React.useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value);
+    }, debounce);
+
+    return () => clearTimeout(timeout);
+  }, [value]);
+
+  return (
+    <input
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+  );
+}
 
 const columnHelper = createColumnHelper<Process>();
 
@@ -59,7 +94,7 @@ const ProductList: React.FC = () => {
   const [processList, setProcessList] = useState<Process[]>([]);
   const [productList, setProductList] = useState<Product[]>([]);
   const [processorList, setProcessorList] = useState<Processor[]>([]);
-
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   useEffect(() => {
     try {
       if (processor?.IDS) {
@@ -142,9 +177,11 @@ const ProductList: React.FC = () => {
       header: "Process Name",
       cell: (info) => info.getValue(),
       footer: (info) => info.column.id,
+      filterFn: "includesString",
     }),
     columnHelper.accessor("inputs", {
       header: "Input Products",
+      filterFn: "includesString",
       cell: (info) => {
         const value = info.getValue();
         let transformedArray;
@@ -209,8 +246,22 @@ const ProductList: React.FC = () => {
   const table = useReactTable({
     data: processList,
     columns,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
+
+  function Filter({ column }) {
+    const columnFilterValue = column.getFilterValue();
+    return (
+      <input
+        value={columnFilterValue ?? ""}
+        onChange={(e) => column.setFilterValue(e.target.value)}
+        placeholder={`Search ${column.columnDef.header}`}
+        className="w-full border shadow rounded"
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 bg-red">
@@ -224,12 +275,32 @@ const ProductList: React.FC = () => {
                   key={header.id}
                   className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                  {header.isPlaceholder ? null : (
+                    <>
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? "cursor-pointer select-none"
+                            : "",
+                          onClick: header.column.getToggleSortingHandler(),
+                        }}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: " 🔼",
+                          desc: " 🔽",
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                      {header.column.getCanFilter() ? (
+                        <div>
+                          <Filter column={header.column} />
+                        </div>
+                      ) : null}
+                    </>
+                  )}
                 </th>
               ))}
             </tr>
