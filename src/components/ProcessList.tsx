@@ -70,11 +70,10 @@ const ProductList: React.FC = () => {
   const [processorList, setProcessorList] = useState<Processor[]>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  // A typical debounced input react component
   function DebouncedInput({
     value: initialValue,
     onChange,
-    debounce = 500,
+    debounce = 5000,
     ...props
   }: {
     value: string | number;
@@ -100,10 +99,6 @@ const ProductList: React.FC = () => {
         {...props}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onClick={(e) => {
-          e.stopPropagation();
-          props.onClick?.(e); // Appeler le gestionnaire onClick d'origine s'il existe
-        }}
       />
     );
   }
@@ -172,7 +167,6 @@ const ProductList: React.FC = () => {
   }, []);
 
   const getProductName = (id: number) => {
-    // console.log("Product List:", productList);
     const product = productList.find((p) => p.i === id);
     return product ? product.name : "Unknown";
   };
@@ -187,81 +181,72 @@ const ProductList: React.FC = () => {
       header: "Process Name",
       cell: (info) => info.getValue(),
       footer: (info) => info.column.id,
-      filterFn: "includesString",
       meta: {
         filterVariant: "text",
       },
     }),
-    // columnHelper.accessor("inputs", {
-    //   header: "Input Products",
-    //   filterFn: "includesString",
-    //   meta: {
-    //     filterVariant: "select",
-    //   },
-    //   cell: (info) => {
-    //     const value = info.getValue();
-    //     let transformedArray = [];
-    //     if (typeof value === "object" && !Array.isArray(value)) {
-    //       transformedArray = Object.entries(value);
-    //     }
+    columnHelper.accessor("inputs", {
+      header: "Input Products",
 
-    //     return (
-    //       <div>
-    //         {transformedArray.map((input, index) => (
-    //           <div
-    //             key={index}
-    //             className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
-    //           >
-    //             {`${getProductName(Number(input[0]))}, Cost: ${input[1]}`}
-    //           </div>
-    //         ))}
-    //       </div>
-    //     );
-    //   },
-    //   footer: (info) => info.column.id,
-    // }),
+      meta: {
+        filterVariant: "text",
+      },
+      cell: (info) => {
+        const value = info.getValue();
+        let transformedArray = [];
+        if (typeof value === "object" && !Array.isArray(value)) {
+          transformedArray = Object.entries(value);
+        }
 
-    // columnHelper.accessor("outputs", {
-    //   header: "Output Products",
-    //   meta: {
-    //     filterVariant: "select",
-    //   },
-    //   cell: (info) => {
-    //     const value = info.getValue();
-    //     let transformedArray = [];
-    //     if (typeof value === "object" && !Array.isArray(value)) {
-    //       transformedArray = Object.entries(value);
-    //     }
+        return (
+          <div>
+            {transformedArray.map((input, index) => (
+              <div
+                key={index}
+                className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
+              >
+                {`${getProductName(Number(input[0]))}, Cost: ${input[1]}`}
+              </div>
+            ))}
+          </div>
+        );
+      },
+      footer: (info) => info.column.id,
+    }),
 
-    //     return (
-    //       <div>
-    //         {transformedArray.map((output, index) => (
-    //           <div
-    //             key={index}
-    //             className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
-    //           >
-    //             {`${getProductName(Number(output[0]))}, Cost: ${output[1]}`}
-    //           </div>
-    //         ))}
-    //       </div>
-    //     );
-    //   },
-    //   footer: (info) => info.column.id,
-    // }),
+    columnHelper.accessor("outputs", {
+      header: "Output Products",
+      meta: {
+        filterVariant: "text",
+      },
+      cell: (info) => {
+        const value = info.getValue();
+        let transformedArray = [];
+        if (typeof value === "object" && !Array.isArray(value)) {
+          transformedArray = Object.entries(value);
+        }
+
+        return (
+          <div>
+            {transformedArray.map((output, index) => (
+              <div
+                key={index}
+                className="block border-2 border-black rounded-lg p-2 mb-2 bg-slate-700"
+              >
+                {`${getProductName(Number(output[0]))}, Cost: ${output[1]}`}
+              </div>
+            ))}
+          </div>
+        );
+      },
+      footer: (info) => info.column.id,
+    }),
     columnHelper.accessor("processorType", {
       header: "Processor Type",
       meta: {
         filterVariant: "select",
       },
       cell: (info) => getProcessorName(Number(info.getValue())),
-      footer: (info) => info.column.id,
-    }),
-    columnHelper.accessor("cost", {
-      header: "Cost",
-      meta: {
-        filterVariant: "select",
-      },
-      cell: (info) => info.getValue(),
       footer: (info) => info.column.id,
     }),
   ];
